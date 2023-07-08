@@ -17,6 +17,8 @@ from wordcloud import WordCloud
 from mysql.connector.plugins import caching_sha2_password
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
+dataFrameSerialization = "legacy"
 def add_bg_from_url():
     st.markdown(
          f"""
@@ -33,7 +35,7 @@ def add_bg_from_url():
 
 add_bg_from_url()
 # ------------------------API SETUP----------------------------------------------#
-api_key = "AIzaSyDnKiSiNZqp3dRiy7JZaho3pu_LOvk1nfU"
+api_key = "AIzaSyAmwRZ9njd9CHKOZ167LY9KMVD2rJML2Ck"
 
 youtube = build('youtube', 'v3', developerKey=api_key)
 
@@ -672,7 +674,7 @@ document_names = []
 for document in collection.find():
     document_names.append(document["Channel_Details"]["Channel_Name"])
 
-document_name = st.selectbox('Select channel name', options=document_names, key='document_names')
+document_name = st.selectbox('Select channel name', options=document_names, key='document_name')
 st.write('''Migrate to MySQL database from MongoDB database to click below **:blue['Migrate to MySQL']**.''')
 Migrate = st.button('**Migrate to MySQL**')
 
@@ -686,7 +688,7 @@ result = collection.find_one({"Channel_Details.Channel_Name":document_name})
 # st.write(result)
 # ----------------------------- Data conversion --------------------- #
 
-print(result['Channel_Details']['Channel_Name'])
+# print(result['Channel_Details']['Channel_Name'])
 # Channel data json to df
 
 channel_details_to_sql = {
@@ -723,13 +725,13 @@ for i in range(1, len(result['Video_Details']) - 1):
         'Duration': result['Video_Details'][f"Video_{i}"]['Duration'],
         'Thumbnail': result['Video_Details'][f"Video_{i}"]['Thumbnail'],
         'Caption_Status': result['Video_Details'][f"Video_{i}"]['Caption_Status']}
-video_details_list.append(video_details_tosql)
-video_df = pd.DataFrame(video_details_list)
+    video_details_list.append(video_details_tosql)
+    video_df = pd.DataFrame(video_details_list)
 
 # Comment data json to df
 Comment_details_list = []
-for i in range(1, len(result['Video_Details'][f'Video_{i}']['Comments']) - 1):
-    comments_access = result['Video_Details'][f'Video_{i}']['Comments']
+for i in range(1, len(result['Video_Details']['Video_1']['Comments']) - 1):
+    comments_access = result['Video_Details']['Video_1']['Comments']
     if comments_access == 'Unavailable' or (
             'Comment_1' not in comments_access or 'Comment_2' not in comments_access):
         Comment_details_tosql = {
@@ -822,7 +824,9 @@ query = "SELECT distinct Channel_Name FROM channel;"
 results = pd.read_sql(query, engine)
 
 channel_names_fromsql = list(results['Channel_Name'])
+
 # # Create a DataFrame from the list and reset the index to start from 1
+df_at_sql = pd.DataFrame(channel_names_fromsql, columns=['Available channel data']).reset_index(drop=True)
 df_at_sql = pd.DataFrame(channel_names_fromsql, columns=['Available channel data']).reset_index(drop=True)
 # Reset index to start from 1 instead of 0
 df_at_sql.index += 1
